@@ -6,16 +6,32 @@ require 'db_config.php';
 if ( isset($_GET['id']) )
 {
 	// Hent værdien af URL parametret id og gem i variablen $id
-	$id = $_GET['id'];
+	$id		= intval($_GET['id']);
 
 	// Hent produktet fra databasen, der matcher produkt_id gemt i variablen $id
-	$query =
+	$query	=
 		"SELECT
 			*
 		FROM
 			produkter
 		WHERE
 			produkt_id = $id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Brug funktionen mysqli_num_rows() til at returnere antallet af rækker (produkter) fra vores forespørgsel og hvis der blev fundet 0 produkter, vises denne besked
+	if ( mysqli_num_rows($result) == 0 )
+	{
+		die('Der blev ikke fundet et produkt i databasen, der matcher id: ' . $id );
+	}
+
+	// Brug funktionen mysqli_fetch_assoc() til at hente dataen fra vores forespørgsel, og gemme som et assoc array (Hvor kolonnenavnene fra databasen, bruges som index/key i array) i variablen $produkt
+	$produkt	= mysqli_fetch_assoc($result);
+}
+else
+{
+	die('Der er ikke valgt et produkt. (Der står ikke ?id=et-tal i adresselinjen)');
 }
 
 // Hvis navn er defineret i $_POST, ved vi at vi har sendt vores formular og så kan vi køre dette kode mellem {}
@@ -31,16 +47,20 @@ if ( isset($_POST['navn']) )
 	$designer		= intval($_POST['designer']);
 	$kategori		= intval($_POST['kategori']);
 
-	// Forespørgsel til aT oprette produktet i databasen
+	// Forespørgsel til aT opdatere produktet i databasen
 	$query =
-		"INSERT INTO
-			produkter (produkt_navn, produkt_pris, produkt_design_aar, produkt_vare_nr, produkt_beskrivelse, fk_designer_id, fk_kategori_id)
-		VALUES ('$navn', $pris, $aar, $varenr, '$beskrivelse', $designer, $kategori)";
+		"UPDATE
+			produkter
+		SET
+			produkt_navn = '$navn', produkt_pris = $pris, produkt_design_aar = $aar, produkt_vare_nr = $varenr, produkt_beskrivelse = '$beskrivelse', fk_designer_id = $designer, fk_kategori_id = $kategori
+		WHERE
+			produkt_id = $id";
 
 	// Send forespørgsel til databassen og gem resultat i variablen $result
 	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
 
-	header('Location: opret-produkt.php?status=success');
+	// Opdatér siden og tilføj URL parametret status med værdien success, som bruges til at vise status besked ved submit-knappen
+	header('Location: rediger-produkt.php?id=' . $id . '&status=success');
 }
 
 ?>
@@ -64,35 +84,35 @@ if ( isset($_POST['navn']) )
 		<p>
 			<label>
 				Navn:
-				<input type="text" name="navn" value="" required maxlength="50">
+				<input type="text" name="navn" value="<?php echo $produkt['produkt_navn'] ?>" required maxlength="50">
 			</label>
 		</p>
 
 		<p>
 			<label>
 				Pris:
-				<input type="number" step="0.25" lang="da" name="pris" required min="0" max="999999.99" value="">
+				<input type="number" step="0.25" lang="da" name="pris" required min="0" max="999999.99" value="<?php echo $produkt['produkt_pris'] ?>">
 			</label>
 		</p>
 
 		<p>
 			<label>
 				Design år:
-				<input	type="number" name="aar" required min="1" max="9999" value="<?php echo date('Y') // Udskriv aktuelt årstal ?>">
+				<input	type="number" name="aar" required min="1" max="9999" value="<?php echo $produkt['produkt_design_aar'] // Udskriv aktuelt årstal ?>">
 			</label>
 		</p>
 
 		<p>
 			<label>
 				Vare nr.:
-				<input type="number" name="varenr" id="test" min="100000" max="16777215" required value="">
+				<input type="number" name="varenr" id="test" min="100000" max="16777215" required value="<?php echo $produkt['produkt_vare_nr'] ?>">
 			</label>
 		</p>
 
 		<p>
 			<label>
 				Beskrivelse:
-				<textarea name="beskrivelse" required cols="30" rows="4" style="resize: none"></textarea>
+				<textarea name="beskrivelse" required cols="30" rows="4" style="resize: none"><?php echo $produkt['produkt_beskrivelse'] ?></textarea>
 			</label>
 		</p>
 
@@ -122,10 +142,20 @@ if ( isset($_POST['navn']) )
 					// Brug funktion mysqli_fetch_assoc() til at hente data fra vores forespørgsel og returnere det som et assoc array og gem det i variblen $row. Vi bruger while-løkke til at løbe igennem alle rækker af designere
 					while( $row = mysqli_fetch_assoc($result) )
 					{
+						$selected = '';
+						// Hvis produktets aktuelle værdi for fk_designer_id, matcher rækken med designer_id, gemmes attributten selected i variablen som vi også har kaldt selected
+						if ($produkt['fk_designer_id'] == $row['designer_id'])
+						{
+							$selected = 'selected';
+						}
+
+						// echo '<option value="' . $row['designer_id'] . '" ' . $selected . '>' . $row['designer_navn'] . '</option>';
+
 						// Udskriv designerens id og navn fra databasen
-						// echo '<option value="' . $row['designer_id'] . '">' . $row['designer_navn'] . '</option>';
 						?>
-						<option value="<?php echo $row['designer_id'] ?>"><?php echo  $row['designer_navn'] ?></option>
+						<option value="<?php echo $row['designer_id'] ?>" <?php echo $selected ?>>
+							<?php echo $row['designer_navn'] ?>
+						</option>
 						<?php
 					}
 					?>
@@ -159,8 +189,19 @@ if ( isset($_POST['navn']) )
 					// Brug funktion mysqli_fetch_assoc() til at hente data fra vores forespørgsel og returnere det som et assoc array og gem det i variblen $row. Vi bruger while-løkke til at løbe igennem alle rækker af designere
 					while( $row = mysqli_fetch_assoc($result) )
 					{
+						$selected = '';
+						// Hvis produktets aktuelle værdi for fk_designer_id, matcher rækken med designer_id, gemmes attributten selected i variablen som vi også har kaldt selected
+						if ($produkt['fk_kategori_id'] == $row['kategori_id'])
+						{
+							$selected = 'selected';
+						}
+
+						// Ovenstående kan skrives shorthand, hvis man vil spare lidt plads
+						// $selected = ($produkt['fk_kategori_id'] == $row['kategori_id']) ? 'selected' : '';
 						?>
-						<option value="<?php echo $row['kategori_id'] ?>"><?php echo  $row['kategori_navn'] ?></option>
+						<option value="<?php echo $row['kategori_id'] ?>" <?php echo $selected ?>>
+							<?php echo $row['kategori_navn'] ?>
+						</option>
 						<?php
 					}
 					?>
@@ -175,11 +216,11 @@ if ( isset($_POST['navn']) )
 			// Hvis værdien af status er lig success, vises denne besked
 			if ($_GET['status'] == 'success')
 			{
-				echo '<p>Produktet blev oprettet!</p>';
+				echo '<p>Produktet blev rettet!</p>';
 			}
 		}
 		?>
-		<button type="submit">Opret produkt</button>
+		<button type="submit">Rediger produkt</button>
 	</form>
 </body>
 </html>

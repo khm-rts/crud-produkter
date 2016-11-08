@@ -24,6 +24,7 @@ if ( isset($_POST['navn']) )
 	// Send forespørgsel til databassen og gem resultat i variablen $result
 	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
 
+	// Opdatér siden og tilføj URL parametret status med værdien success, som bruges til at vise status besked ved submit-knappen
 	header('Location: opret-produkt.php?status=success');
 }
 
