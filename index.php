@@ -79,7 +79,9 @@ if ( isset($_GET['id']) )
 
 				<th>Pris</th>
 
-				<th></th>
+				<th></th> <!-- Tom kolonne til Billede link -->
+
+				<th></th> <!-- Tom kolonne til Rediger link -->
 
 				<th>
 					<a href="opret-produkt.php">Opret</a>
@@ -108,6 +110,10 @@ if ( isset($_GET['id']) )
 
 					<td>
 						<?php echo number_format($row['produkt_pris'], 0, ',', '') // Brug number_format() til at vise produktets pris med 0 decimaler og ingen tusind separator ?> kr.
+					</td>
+
+					<td>
+						<a href="produkt-billeder.php?id=<?php echo $row['produkt_id'] ?>">Billeder</a>
 					</td>
 
 					<td>
