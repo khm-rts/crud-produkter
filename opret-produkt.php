@@ -160,7 +160,7 @@ if ( isset($_POST['navn']) )
 			// Hvis værdien af status er lig success, vises denne besked
 			if ($_GET['status'] == 'success')
 			{
-				echo '<p>Produktet blev oprettet!</p>';
+				echo '<p>Produktet blev oprettet! <a href="opret-produkt.php">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>';
 			}
 		}
 		?>

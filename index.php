@@ -1,6 +1,26 @@
 <?php
 // Inkludér fil der etablerer forbindelsen til databasen
 require 'db_config.php';
+
+// Hvis URL parametret id er defineret i adresselinjen, så kør dette kode mellem {}
+if ( isset($_GET['id']) )
+{
+	// Hent værdien af URL parametret id og gem i variablen $id
+	$id = intval($_GET['id']);
+
+	// Forespørgslen til at slette produktet fra databasen, som matcher nummeret gemt i variablen $id
+	$query =
+		"DELETE FROM
+			produkter
+		WHERE
+			produkt_id = $id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Opdatér siden for at fjerne URL parametret id, der blev brugt til at slette produktet
+	header('Location: index.php?status=success');
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -17,6 +37,16 @@ require 'db_config.php';
 	<h2>Oversigt over produkter</h2>
 
 	<?php
+	// Hvis der står status i vores URL parametre, køres dette kode
+	if ( isset($_GET['status']) )
+	{
+		// Hvis værdien af status er lig success, vises denne besked
+		if ($_GET['status'] == 'success')
+		{
+			echo '<p>Produktet blev slettet! <a href="index.php">Luk</a></p>';
+		}
+	}
+
 	// Hent alle produkter fra databasen or sorter dem efter varenummer
 	$query =
 		"SELECT
@@ -32,7 +62,7 @@ require 'db_config.php';
 	// Hvis der ikke blev fundet nogle rækker/produkter i vores forespørgsel, vises denne besked
 	if ( mysqli_num_rows($result) == 0 )
 	{
-		echo '<p>Der blev ikke fundet nogle produkter</p>';
+		echo '<p>Der blev ikke fundet nogle produkter, klik <a href="opret-produkt.php">her</a> for at oprette et nyt produkt</p>';
 	}
 	// Hvis der blev fundet nogle produkter, så vises de her
 	else

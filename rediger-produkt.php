@@ -216,7 +216,7 @@ if ( isset($_POST['navn']) )
 			// Hvis værdien af status er lig success, vises denne besked
 			if ($_GET['status'] == 'success')
 			{
-				echo '<p>Produktet blev rettet!</p>';
+				echo '<p>Produktet blev rettet! <a href="rediger-produkt.php?id=' . $id . '">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>';
 			}
 		}
 		?>
