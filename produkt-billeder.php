@@ -74,10 +74,95 @@ else
 	die('Der er ikke valgt et produkt. (Der står ikke ?id=et-tal i adresselinjen)');
 }
 
+// Hvis URL parametrene billede_id og primaer er defineret i adresselinjen, køres koden mellem {}
+if ( isset($_GET['billede_id']) && isset($_GET['primaer']) )
+{
+	// Hent værdien af URL parameteret billede_id og brug intval() for at sikre imod SQL injections
+	$billede_id = intval($_GET['billede_id']);
+
+	// Forespørgsel til at gøre det valgte billede primært, ved at opdatere kolonnen _er_primaer til 1
+	$query =
+		"UPDATE
+			produkt_billeder
+		SET
+			produkt_billede_er_primaer = 1
+		WHERE
+			produkt_billede_id = $billede_id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Forespørgsel til at rette alle andre billeder, ved at opdatere kolonnen _er_primaer til 0
+	$query =
+		"UPDATE
+			produkt_billeder
+		SET
+			produkt_billede_er_primaer = 0
+		WHERE
+			produkt_billede_id != $billede_id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+}
+
+// Hvis URL parametrene billede_id og slet er defineret i adresselinjen, køres dette kode mellem {}
+if ( isset($_GET['billede_id']) && isset($_GET['slet']) )
+{
+	// Hent værdien af URL parameteret billede_id og brug intval() for at sikre imod SQL injections
+	$billede_id = intval($_GET['billede_id']);
+
+	// Forespørgsel til at hente filnavnet til det valgte billede fra databasen
+	$query =
+		"SELECT
+			produkt_billede_filnavn
+		FROM
+			produkt_billeder
+		WHERE
+			produkt_billede_id = $billede_id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Brug funktionen mysqli_fetch_assoc() til at hente dataen fra vores forespørgsel, og gemme som et assoc array (Hvor kolonnenavnene fra databasen, bruges som index/key i array) i variablen $row
+	$row	= mysqli_fetch_assoc($result);
+
+	// Tjek at filen eksisterer før vi prøver at slette den med unlink(), for at undgå fejl, hvis ikke filen findes
+	if ( file_exists('img/' . $row['produkt_billede_filnavn']) )
+	{
+		// Slet det store billede fra img-mappen
+		unlink('img/' . $row['produkt_billede_filnavn']);
+	}
+
+	// Tjek at filen eksisterer før vi prøver at slette den med unlink(), for at undgå fejl, hvis ikke filen findes
+	if ( file_exists('img/thumb/' . $row['produkt_billede_filnavn']) )
+	{
+		// Slet miniaturen fra thumb-mappen
+		unlink('img/thumb/' . $row['produkt_billede_filnavn']);
+	}
+
+	// Forespørgsel til at slette billedet fra databasen
+	$query =
+		"DELETE FROM
+			produkt_billeder
+		WHERE
+			produkt_billede_id = $billede_id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Opdatér siden for at fjerne URL parametrene billede_id og slet, for at undgå vi sletter det samme billede igen
+	// BEMÆRK: Hvis der er fejl, udkommenter denne header(), da vi ellers ikke kan se evt. fejlbeskeder
+	header('Location: produkt-billeder.php?id=' . $produkt_id);
+}
+
+// Man kan gemme stier i variabler som her, så når vi skal uploade, vise og slette billeder, kan man rette stien et sted
+/*$sti		= 'img/';
+$thumb_sti	= $sti . 'thumb/';*/
+
 // Fejlsøg med et print på $_FILES
-echo '<pre>';
+/*echo '<pre>';
 print_r($_FILES);
-echo '</pre>';
+echo '</pre>';*/
 ?>
 <!doctype html>
 <html lang="en">
@@ -111,9 +196,13 @@ echo '</pre>';
 	// Brug funktion mysqli_fetch_assoc() til at hente data fra vores forespørgsel og returnere det som et assoc array og gem det i variblen $row. Vi bruger while-løkke til at løbe igennem alle rækker af designere
 	while( $row = mysqli_fetch_assoc($result) )
 	{
-		// Vis billederne fra databasen
+		// Vis billederne fra databasen samt links til primært og slet billede
 		?>
-		<img src="img/thumb/<?php echo $row['produkt_billede_filnavn'] ?>">
+		<p>
+			<img src="img/thumb/<?php echo $row['produkt_billede_filnavn'] ?>">
+			<br><a href="produkt-billeder.php?id=<?php echo $produkt_id ?>&billede_id=<?php echo $row['produkt_billede_id'] ?>&primaer">Gør til primært billede</a>
+			<br><a href="produkt-billeder.php?id=<?php echo $produkt_id ?>&billede_id=<?php echo $row['produkt_billede_id'] ?>&slet" onclick="return confirm('Er du sikker på du vil slette billedet?')">Slet billede</a>
+		</p>
 		<?php
 	}
 	?>

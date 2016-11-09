@@ -8,6 +8,47 @@ if ( isset($_GET['id']) )
 	// Hent værdien af URL parametret id og gem i variablen $id
 	$id = intval($_GET['id']);
 
+	// Forespørgsel til at hente filnavne fra databasen til de billeder der tilhører det valgte produkt
+	$query =
+		"SELECT
+			produkt_billede_filnavn
+		FROM
+			produkt_billeder
+		WHERE
+			fk_produkt_id = $id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Brug funktion mysqli_fetch_assoc() til at hente data fra vores forespørgsel og returnere det som et assoc array og gem det i variblen $row. Vi bruger while-løkke til at løbe igennem alle rækker af designere
+	while( $row = mysqli_fetch_assoc($result) )
+	{
+		// Tjek at filen eksisterer før vi prøver at slette den med unlink(), for at undgå fejl, hvis ikke filen findes
+		if ( file_exists('img/' . $row['produkt_billede_filnavn']) )
+		{
+			// Slet det store billede fra img-mappen
+			unlink('img/' . $row['produkt_billede_filnavn']);
+		}
+
+		// Tjek at filen eksisterer før vi prøver at slette den med unlink(), for at undgå fejl, hvis ikke filen findes
+		if ( file_exists('img/thumb/' . $row['produkt_billede_filnavn']) )
+		{
+			// Slet miniaturen fra thumb-mappen
+			unlink('img/thumb/' . $row['produkt_billede_filnavn']);
+		}
+	}
+
+	// Forespørgsel til at slette billedet fra databasen
+	// Vi har valgt CASCADE da vi oprettede relationen mellem produkt og dets billeder, derfor sletter den automatisk billederne til det valgte fra databasen
+	/*$query =
+		"DELETE FROM
+			produkt_billeder
+		WHERE
+			fk_produkt_id = $id";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);*/
+
 	// Forespørgslen til at slette produktet fra databasen, som matcher nummeret gemt i variablen $id
 	$query =
 		"DELETE FROM
@@ -122,7 +163,7 @@ if ( isset($_GET['id']) )
 					</td>
 
 					<td>
-						<a href="index.php?id=<?php echo $row['produkt_id'] ?>">Slet</a>
+						<a href="index.php?id=<?php echo $row['produkt_id'] ?>" onclick="return confirm('Er du sikker på du vil slette produktet og tilhørende billeder?')">Slet</a>
 					</td>
 				</tr>
 				<?php
