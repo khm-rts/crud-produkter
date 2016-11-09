@@ -25,6 +25,7 @@ if ( isset($_POST['navn']) )
 	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
 
 	// Opdatér siden og tilføj URL parametret status med værdien success, som bruges til at vise status besked ved submit-knappen
+	// BEMÆRK: Hvis der er fejl, udkommenter denne header(), da vi ellers ikke kan se evt. fejlbeskeder
 	header('Location: opret-produkt.php?status=success');
 }
 
@@ -160,7 +161,9 @@ if ( isset($_POST['navn']) )
 			// Hvis værdien af status er lig success, vises denne besked
 			if ($_GET['status'] == 'success')
 			{
-				echo '<p>Produktet blev oprettet! <a href="opret-produkt.php">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>';
+				?>
+				<p>Produktet blev oprettet! <a href="opret-produkt.php">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>
+				<?php
 			}
 		}
 		?>

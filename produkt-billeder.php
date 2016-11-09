@@ -64,7 +64,9 @@ if ( isset($_GET['id']) )
 		// Send forespørgsel til databassen og gem resultat i variablen $result
 		$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
 
-		echo 'Billedet blev uploadet';
+		// Opdatér siden og tilføj URL parametret status med værdien success, som bruges til at vise status besked ved submit-knappen.
+		// BEMÆRK: Hvis der er fejl, udkommenter denne header(), da vi ellers ikke kan se evt. fejlbeskeder
+		header('Location: produkt-billeder.php?id=' . $produkt_id . '&status=success');
 	}
 }
 else
@@ -72,6 +74,7 @@ else
 	die('Der er ikke valgt et produkt. (Der står ikke ?id=et-tal i adresselinjen)');
 }
 
+// Fejlsøg med et print på $_FILES
 echo '<pre>';
 print_r($_FILES);
 echo '</pre>';
@@ -90,6 +93,31 @@ echo '</pre>';
 
 	<h2>Produktbilleder til <?php echo $produkt['produkt_navn'] ?></h2>
 
+	<?php
+	// Forespørgsel til at hente billeder fra databasen til det valgte produkt or sortere dem med primært billede først
+	$query =
+		"SELECT
+			*
+		FROM
+			produkt_billeder
+		WHERE
+			fk_produkt_id = $produkt_id
+		ORDER BY 
+			produkt_billede_er_primaer DESC";
+
+	// Send forespørgsel til databassen og gem resultat i variablen $result
+	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
+
+	// Brug funktion mysqli_fetch_assoc() til at hente data fra vores forespørgsel og returnere det som et assoc array og gem det i variblen $row. Vi bruger while-løkke til at løbe igennem alle rækker af designere
+	while( $row = mysqli_fetch_assoc($result) )
+	{
+		// Vis billederne fra databasen
+		?>
+		<img src="img/thumb/<?php echo $row['produkt_billede_filnavn'] ?>">
+		<?php
+	}
+	?>
+
 	<!-- HUSK enctype="multipart/form-data", ellers kan der ikke uploades filer -->
 	<form method="post" enctype="multipart/form-data">
 		<p>
@@ -99,6 +127,19 @@ echo '</pre>';
 			</label>
 		</p>
 
+		<?php
+		// Hvis der står status i vores URL parametre, køres dette kode
+		if ( isset($_GET['status']) )
+		{
+			// Hvis værdien af status er lig success, vises denne besked
+			if ($_GET['status'] == 'success')
+			{
+				?>
+				<p>Billedet blev uploadet! <a href="produkt-billeder.php?id=<?php echo $produkt_id ?>">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>
+				<?php
+			}
+		}
+		?>
 		<button type="submit">Upload</button>
 	</form>
 </body>

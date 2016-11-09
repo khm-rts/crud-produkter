@@ -19,6 +19,7 @@ if ( isset($_GET['id']) )
 	$result = mysqli_query($link, $query) or sql_error($query, __LINE__, __FILE__);
 
 	// Opdatér siden for at fjerne URL parametret id, der blev brugt til at slette produktet
+	// BEMÆRK: Hvis der er fejl, udkommenter denne header(), da vi ellers ikke kan se evt. fejlbeskeder
 	header('Location: index.php?status=success');
 }
 ?>

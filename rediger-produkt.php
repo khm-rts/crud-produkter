@@ -61,6 +61,7 @@ if ( isset($_POST['navn']) )
 
 	// Opdatér siden og tilføj URL parametret status med værdien success, som bruges til at vise status besked ved submit-knappen
 	header('Location: rediger-produkt.php?id=' . $id . '&status=success');
+	// BEMÆRK: Hvis der er fejl, udkommenter denne header(), da vi ellers ikke kan se evt. fejlbeskeder
 }
 
 ?>
@@ -216,7 +217,9 @@ if ( isset($_POST['navn']) )
 			// Hvis værdien af status er lig success, vises denne besked
 			if ($_GET['status'] == 'success')
 			{
-				echo '<p>Produktet blev rettet! <a href="rediger-produkt.php?id=' . $id . '">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>';
+				?>
+				<p>Produktet blev rettet! <a href="rediger-produkt.php?id=<?php echo $id ?>">Luk</a> eller klik <a href="index.php">her</a> for at gå tilbage til oversigt</p>
+				<?php
 			}
 		}
 		?>
